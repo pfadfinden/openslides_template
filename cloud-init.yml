@@ -24,7 +24,7 @@ write_files:
             EMAIL_HOST: smtpHostHier.pfadfinden.de
             EMAIL_PORT: 587
             EMAIL_HOST_USER: "mailAddyHier@pfadfinden.de"
-            EMAIL_HOST_PASSWORD: "SuperSuperSicher"
+            EMAIL_HOST_PASSWORD: ''
             EMAIL_CONNECTION_SECURITY: "STARTTLS"  # This can also be "NONE" or "STARTTLS".
             EMAIL_TIMEOUT: 5  # Timeout in seconds for blocking operations like the connection attempt.
             EMAIL_ACCEPT_SELF_SIGNED_CERTIFICATE: "false"  # Or "true" of course.
