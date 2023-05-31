@@ -17,9 +17,11 @@ write_files:
       enableLocalHTTPS: false
       services:
         proxy:
+          tag: 4.0.1-main-20230405-096d7db
           environment:
             EXTERNAL_ADDRESS: subdomain.pfadfinden.de
         backendAction:
+          tag: 4.0.1-main-20230405-096d7db
           environment:
             EMAIL_HOST: smtpHostHier.pfadfinden.de
             EMAIL_PORT: 587
@@ -29,6 +31,28 @@ write_files:
             EMAIL_TIMEOUT: 5  # Timeout in seconds for blocking operations like the connection attempt.
             EMAIL_ACCEPT_SELF_SIGNED_CERTIFICATE: "false"  # Or "true" of course.
             DEFAULT_FROM_EMAIL: "mailAddyHier@pfadfinden.de"
+        client:
+          tag: 4.0.1-main-20230405-096d7db
+        backendPresenter:
+          tag: 4.0.1-main-20230405-096d7db
+        backendManage:
+          tag: 4.0.1-main-20230405-096d7db
+        datastoreReader:
+          tag: 4.0.1-main-20230405-096d7db
+        datastoreWriter:
+          tag: 4.0.1-main-20230405-096d7db
+        autoupdate:
+          tag: 4.0.1-main-20230405-096d7db
+        auth:
+          tag: 4.0.1-main-20230405-096d7db
+        vote:
+          tag: 4.0.1-main-20230405-096d7db
+        media:
+          tag: 4.0.1-main-20230405-096d7db
+        icc:
+          tag: 4.0.1-main-20230405-096d7db
+        manage:
+          tag: 4.0.1-main-20230405-096d7db
       defaultEnvironment:
         SYSTEM_URL: subdomain.pfadfinden.de
     owner: os4user:os4user
