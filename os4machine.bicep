@@ -62,6 +62,7 @@ param pipDeleteOption string = 'Delete'
 param virtualMachineName string = 'openslides4'
 param virtualMachineComputerName string = 'openslides4'
 param osDiskType string = 'StandardSSD_LRS'
+param osDiskSizeGB int = 64
 param osDiskDeleteOption string = 'Delete'
 param virtualMachineSize string = 'Standard_B2ms'
 param nicDeleteOption string = 'Delete'
@@ -151,6 +152,7 @@ resource virtualMachine 'Microsoft.Compute/virtualMachines@2022-03-01' = {
     storageProfile: {
       osDisk: {
         createOption: 'fromImage'
+        diskSizeGB: osDiskSizeGB
         managedDisk: {
           storageAccountType: osDiskType
         }
@@ -158,8 +160,8 @@ resource virtualMachine 'Microsoft.Compute/virtualMachines@2022-03-01' = {
       }
       imageReference: {
         publisher: 'debian'
-        offer: 'debian-11'
-        sku: '11-gen2'
+        offer: 'debian-12'
+        sku: '12-gen2'
         version: 'latest'
       }
     }
