@@ -1,18 +1,66 @@
 param location string = 'germanywestcentral'
 param networkInterfaceName string = 'openslides4-nic'
 param networkSecurityGroupName string = 'openslides4-nsg'
-param networkSecurityGroupRules array
+param networkSecurityGroupRules array = [
+  {
+    name: 'allow-ssh'
+    properties: {
+      priority: 1000
+      direction: 'Inbound'
+      access: 'Allow'
+      protocol: 'Tcp'
+      sourcePortRange: '*'
+      destinationPortRange: '22'
+      sourceAddressPrefix: '*'
+      destinationAddressPrefix: '*'
+    }
+  }
+  {
+    name: 'allow-http'
+    properties: {
+      priority: 1010
+      direction: 'Inbound'
+      access: 'Allow'
+      protocol: 'Tcp'
+      sourcePortRange: '*'
+      destinationPortRange: '80'
+      sourceAddressPrefix: '*'
+      destinationAddressPrefix: '*'
+    }
+  }
+  {
+    name: 'allow-https'
+    properties: {
+      priority: 1020
+      direction: 'Inbound'
+      access: 'Allow'
+      protocol: 'Tcp'
+      sourcePortRange: '*'
+      destinationPortRange: '443'
+      sourceAddressPrefix: '*'
+      destinationAddressPrefix: '*'
+    }
+  }
+]
 param subnetName string = 'default'
 param virtualNetworkName string = 'openslides4-vnet'
-param addressPrefixes array
-param subnets array
+param addressPrefixes array = [
+  '10.0.0.0/16'
+]
+param subnets array = [
+  {
+    name: subnetName
+    properties: {
+      addressPrefix: '10.0.0.0/24'
+    }
+  }
+]
 param publicIpAddressName string = 'openslides4-ip'
 param publicIpAddressType string = 'Static'
 param publicIpAddressSku string = 'Standard'
 param pipDeleteOption string = 'Delete'
 param virtualMachineName string = 'openslides4'
 param virtualMachineComputerName string = 'openslides4'
-param virtualMachineRG string = 'openslides-rg'
 param osDiskType string = 'StandardSSD_LRS'
 param osDiskDeleteOption string = 'Delete'
 param virtualMachineSize string = 'Standard_B2ms'
@@ -22,14 +70,12 @@ param adminUsername string = 'os4user'
 @secure()
 param adminPassword string
 
-@secure()
-param customData string
+param customData string = loadFileAsBase64('cloud-init.yml')
 param securityType string = 'TrustedLaunch'
 param secureBoot bool = true
 param vTPM bool = true
 
 var nsgId = resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', networkSecurityGroupName)
-var vnetName = virtualNetworkName
 var vnetId = resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', virtualNetworkName)
 var subnetRef = '${vnetId}/subnets/${subnetName}'
 
@@ -154,3 +200,4 @@ resource virtualMachine 'Microsoft.Compute/virtualMachines@2022-03-01' = {
 }
 
 output adminUsername string = adminUsername
+output publicIpAddress string = publicIpAddress.properties.ipAddress
