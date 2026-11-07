@@ -56,25 +56,3 @@ Das cloud-init läuft einmal mit Platzhalter-Werten durch (`subdomain.pfadfinden
 
 5. **Initiale Daten anlegen**: `./openslides initial-data -a <deine-subdomain>:443`
 6. Rufe `https://<deine-subdomain>` auf und melde dich mit **admin / admin** an — ändere das Passwort sofort (Benutzermenü → Passwort ändern).
-
-## Aufbau des Repos
-
-| Datei | Zweck |
-| --- | --- |
-| `os4machine.bicep` | Quelle der Azure-Infrastruktur (VM, Netzwerk, NSG, IP) |
-| `azuredeploy.json` | Kompiliertes ARM-Template — **darauf zeigt der Button** (das Portal kann keine Remote-`.bicep`-Dateien deployen) |
-| `cloud-init.yml` | Bootstrap der VM; wird beim Build base64-kodiert als `customData` eingebettet |
-
-Nach Änderungen an `os4machine.bicep` oder `cloud-init.yml` das Template neu generieren und committen:
-
-```sh
-bicep build os4machine.bicep --stdout > azuredeploy.json
-```
-
-## Kosten und Aufräumen
-
-Die VM allein kostet ca. **60–70 € pro Monat** (On-Demand, `germanywestcentral`), dazu ein paar Euro für Disk und öffentliche IP. Um alle Kosten zu stoppen, lösche die gesamte Ressourcengruppe im Azure-Portal — alle von diesem Template erzeugten Ressourcen liegen darin.
-
-## Lizenz
-
-[MIT](LICENSE) © Bund der Pfadfinderinnen & Pfadfinder e.V.
