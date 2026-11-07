@@ -1,50 +1,50 @@
-# BdP OpenSlides 4 deployer
+# BdP OpenSlides-4-Deployer
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fpfadfinden%2Fopenslides_template%2Fmain%2Fazuredeploy.json)
 
-One-click deployment of a new [OpenSlides 4](https://openslides.com) instance on a dedicated Azure VM. The VM is fully configured by cloud-init — no manual installation needed.
+Ein-Klick-Deployment einer neuen [OpenSlides-4](https://openslides.com)-Instanz auf einer dedizierten Azure-VM. Die VM wird vollständig per cloud-init konfiguriert — keine manuelle Installation nötig.
 
-## What you get
+## Was du bekommst
 
-- Azure VM `Standard_B2ms` (2 vCPU / 8 GB RAM), Debian 12 (Gen2, 64 GB SSD), Trusted Launch with Secure Boot + vTPM
-- Public IP (Standard, static), virtual network `10.0.0.0/16` with subnet `10.0.0.0/24`
-- Network security group allowing inbound **22** (SSH), **80** and **443** (OpenSlides / auto-HTTPS)
-- cloud-init installs Docker + the [OpenSlides manage tool](https://github.com/OpenSlides/openslides-manage-service), generates `docker-compose.yml`, starts the full OpenSlides 4 stack and creates the initial database
+- Azure-VM `Standard_B2ms` (2 vCPU / 8 GB RAM), Debian 12 (Gen2, 64 GB SSD), Trusted Launch mit Secure Boot + vTPM
+- Öffentliche IP (Standard, statisch), virtuelles Netzwerk `10.0.0.0/16` mit Subnetz `10.0.0.0/24`
+- Netzwerksicherheitsgruppe mit eingehenden Ports **22** (SSH), **80** und **443** (OpenSlides / Auto-HTTPS)
+- cloud-init installiert Docker und das [OpenSlides-Manage-Tool](https://github.com/OpenSlides/openslides-manage-service), erzeugt die `docker-compose.yml`, startet den kompletten OpenSlides-4-Stack und legt die initiale Datenbank an
 
-## Prerequisites
+## Voraussetzungen
 
-- An **Azure subscription** (a free trial works)
-- A **domain/subdomain you control** — you need to create a DNS A record pointing to the VM's public IP (required for the automatic Let's Encrypt HTTPS certificate)
-- **SMTP credentials** for outgoing e-mail (invites, password resets) — optional but recommended
+- Ein **Azure-Subscription** (ein kostenloses Testabo reicht)
+- Eine **Domain/Subdomain, die du kontrollierst** — du musst einen DNS-A-Record auf die öffentliche IP der VM setzen (Pflicht für das automatische Let's-Encrypt-HTTPS-Zertifikat)
+- **SMTP-Zugangsdaten** für ausgehende E-Mails (Einladungen, Passwort-Reset) — optional, aber empfohlen
 
-## Deploy
+## Deployment
 
-1. Click the **Deploy to Azure** button above and sign in to the Azure portal.
-2. **Basics**: choose your subscription, create a new resource group (e.g. `openslides-rg`) and pick a region (default: `germanywestcentral`).
-3. **Settings**: only the **admin password** for the VM is required. Everything else is pre-filled (`Standard_B2ms`, Debian 12, user `os4user`, ports 22/80/443, cloud-init from this repo).
-4. **Review + create** and wait ~5–10 minutes. The VM's **public IP** is shown in the deployment outputs.
+1. Klicke oben auf **Deploy to Azure** und melde dich im Azure-Portal an.
+2. **Basics**: Subscription wählen, neue Ressourcengruppe anlegen (z. B. `openslides-rg`) und Region wählen (Default: `germanywestcentral`).
+3. **Einstellungen**: Nur das **Admin-Passwort** der VM ist Pflicht. Alles andere ist bereits vorausgefüllt (`Standard_B2ms`, Debian 12, Benutzer `os4user`, Ports 22/80/443, cloud-init aus diesem Repo).
+4. **Überprüfen + erstellen** und ca. 5–10 Minuten warten. Die **öffentliche IP** der VM steht in den Deployment-Outputs.
 
-### Parameters
+### Parameter
 
-| Parameter | Default | Description |
+| Parameter | Default | Beschreibung |
 | --- | --- | --- |
-| `location` | `germanywestcentral` | Azure region |
-| `virtualMachineSize` | `Standard_B2ms` | VM size (2 vCPU / 8 GB) |
-| `osDiskSizeGB` | `64` | OS disk size in GB |
-| `adminUsername` | `os4user` | SSH user on the VM |
-| `adminPassword` | *(required)* | SSH password — choose a strong one |
-| `customData` | base64 of `cloud-init.yml` | VM bootstrap config (do not edit unless you know what you are doing) |
+| `location` | `germanywestcentral` | Azure-Region |
+| `virtualMachineSize` | `Standard_B2ms` | VM-Größe (2 vCPU / 8 GB) |
+| `osDiskSizeGB` | `64` | Größe der OS-Disk in GB |
+| `adminUsername` | `os4user` | SSH-Benutzer auf der VM |
+| `adminPassword` | *(Pflicht)* | SSH-Passwort — bitte ein starkes wählen |
+| `customData` | Base64 von `cloud-init.yml` | Bootstrap-Konfiguration der VM (nur anfassen, wer weiß, was er tut) |
 
-## After the deployment
+## Nach dem Deployment
 
-The cloud-init runs once with placeholder values (`subdomain.pfadfinden.de`, empty SMTP password). Finalize the instance like this:
+Das cloud-init läuft einmal mit Platzhalter-Werten durch (`subdomain.pfadfinden.de`, leeres SMTP-Passwort). So finalisierst du die Instanz:
 
-1. **DNS**: create an A record for your subdomain (e.g. `openslides.example.org`) pointing to the VM's public IP. Wait for it to propagate.
-2. **SSH into the VM**: `ssh os4user@<public-ip>` (password from the deployment form).
-3. **Edit the config**: `nano /home/os4user/my-config.yml`
-   - replace every `subdomain.pfadfinden.de` with your subdomain (`EXTERNAL_ADDRESS` and `SYSTEM_URL`)
-   - fill in your SMTP settings (`EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`, ...)
-4. **Re-generate and restart the stack**:
+1. **DNS**: Lege einen A-Record für deine Subdomain (z. B. `openslides.example.org`) an, der auf die öffentliche IP der VM zeigt. Warte, bis er propagiert ist.
+2. **Per SSH auf die VM verbinden**: `ssh os4user@<öffentliche-ip>` (Passwort aus dem Deployment-Formular).
+3. **Konfiguration anpassen**: `nano /home/os4user/my-config.yml`
+   - ersetze jedes `subdomain.pfadfinden.de` durch deine Subdomain (`EXTERNAL_ADDRESS` und `SYSTEM_URL`)
+   - trage deine SMTP-Daten ein (`EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`, ...)
+4. **Stack neu generieren und starten**:
 
    ```sh
    cd /home/os4user
@@ -54,27 +54,27 @@ The cloud-init runs once with placeholder values (`subdomain.pfadfinden.de`, emp
    docker compose up -d
    ```
 
-5. **Create the initial data**: `./openslides initial-data -a <your-subdomain>:443`
-6. Open `https://<your-subdomain>` and log in with **admin / admin** — change the password immediately (user menu → change password).
+5. **Initiale Daten anlegen**: `./openslides initial-data -a <deine-subdomain>:443`
+6. Rufe `https://<deine-subdomain>` auf und melde dich mit **admin / admin** an — ändere das Passwort sofort (Benutzermenü → Passwort ändern).
 
-## Repository layout
+## Aufbau des Repos
 
-| File | Purpose |
+| Datei | Zweck |
 | --- | --- |
-| `os4machine.bicep` | Source of the Azure infrastructure (VM, network, NSG, IP) |
-| `azuredeploy.json` | Compiled ARM template — **this is what the button deploys** (the portal cannot deploy remote `.bicep` files) |
-| `cloud-init.yml` | VM bootstrap; embedded base64-encoded as `customData` at build time |
+| `os4machine.bicep` | Quelle der Azure-Infrastruktur (VM, Netzwerk, NSG, IP) |
+| `azuredeploy.json` | Kompiliertes ARM-Template — **darauf zeigt der Button** (das Portal kann keine Remote-`.bicep`-Dateien deployen) |
+| `cloud-init.yml` | Bootstrap der VM; wird beim Build base64-kodiert als `customData` eingebettet |
 
-After changing `os4machine.bicep` or `cloud-init.yml`, regenerate and commit the template:
+Nach Änderungen an `os4machine.bicep` oder `cloud-init.yml` das Template neu generieren und committen:
 
 ```sh
 bicep build os4machine.bicep --stdout > azuredeploy.json
 ```
 
-## Costs and cleanup
+## Kosten und Aufräumen
 
-The VM alone costs roughly **60–70 € per month** (on-demand, `germanywestcentral`), plus a few euros for disk and public IP. To stop all costs, delete the entire resource group in the Azure portal — everything created by this template lives in it.
+Die VM allein kostet ca. **60–70 € pro Monat** (On-Demand, `germanywestcentral`), dazu ein paar Euro für Disk und öffentliche IP. Um alle Kosten zu stoppen, lösche die gesamte Ressourcengruppe im Azure-Portal — alle von diesem Template erzeugten Ressourcen liegen darin.
 
-## License
+## Lizenz
 
 [MIT](LICENSE) © Bund der Pfadfinderinnen & Pfadfinder e.V.
