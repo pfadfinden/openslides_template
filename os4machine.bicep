@@ -71,7 +71,11 @@ param adminUsername string = 'os4user'
 @secure()
 param adminPassword string
 
-param customData string = loadFileAsBase64('cloud-init.yml')
+param openslidesSubdomain string
+param smtpHost string = ''
+param smtpUser string = ''
+@secure()
+param smtpPassword string = ''
 param securityType string = 'TrustedLaunch'
 param secureBoot bool = true
 param vTPM bool = true
@@ -79,6 +83,11 @@ param vTPM bool = true
 var nsgId = resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', networkSecurityGroupName)
 var vnetId = resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', virtualNetworkName)
 var subnetRef = '${vnetId}/subnets/${subnetName}'
+
+var cloudInitYaml = loadTextContent('cloud-init.yml')
+var smtpPasswordPlaceholder = concat('EMAIL_HOST_PASSWORD: ', '''', '''')
+var smtpPasswordLine = format('EMAIL_HOST_PASSWORD: "{0}"', smtpPassword)
+var cloudInitRendered = replace(replace(replace(replace(cloudInitYaml, 'subdomain.pfadfinden.de', openslidesSubdomain), 'smtpHostHier.pfadfinden.de', smtpHost), 'mailAddyHier@pfadfinden.de', smtpUser), smtpPasswordPlaceholder, smtpPasswordLine)
 
 resource networkInterface 'Microsoft.Network/networkInterfaces@2021-08-01' = {
   name: networkInterfaceName
@@ -184,7 +193,7 @@ resource virtualMachine 'Microsoft.Compute/virtualMachines@2022-03-01' = {
           patchMode: 'ImageDefault'
         }
       }
-      customData: customData
+      customData: base64(cloudInitRendered)
     }
     securityProfile: {
       securityType: securityType

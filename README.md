@@ -21,38 +21,26 @@ Ein-Klick-Deployment einer neuen [OpenSlides-4](https://openslides.com)-Instanz 
 
 1. Klicke oben auf **Deploy to Azure** und melde dich im Azure-Portal an.
 2. **Basics**: Subscription wählen, neue Ressourcengruppe anlegen (z. B. `openslides-rg`) und Region wählen (Default: `germanywestcentral`).
-3. **Einstellungen**: Nur das **Admin-Passwort** der VM ist Pflicht. Alles andere ist bereits vorausgefüllt (`Standard_B2ms`, Debian 12, Benutzer `os4user`, Ports 22/80/443, cloud-init aus diesem Repo).
+3. **Einstellungen**: Pflicht sind das **Admin-Passwort** der VM und **`openslidesSubdomain`** (z. B. `openslides.example.org`). Optional trägst du direkt deine **SMTP-Daten** ein (`smtpHost`, `smtpUser`, `smtpPassword`) — dann verschickt OpenSlides E-Mails (Einladungen, Passwort-Reset) sofort. Alles andere ist bereits vorausgefüllt (`Standard_B2ms`, Debian 12, Benutzer `os4user`, Ports 22/80/443).
 4. **Überprüfen + erstellen** und ca. 5–10 Minuten warten. Die **öffentliche IP** der VM steht in den Deployment-Outputs.
 
 ### Parameter
 
 | Parameter | Default | Beschreibung |
 | --- | --- | --- |
+| `openslidesSubdomain` | *(Pflicht)* | Deine Subdomain, z. B. `openslides.example.org` — wird in die cloud-init eingetragen (`EXTERNAL_ADDRESS`, `SYSTEM_URL`) |
+| `smtpHost` | `''` | SMTP-Server für ausgehende E-Mails |
+| `smtpUser` | `''` | SMTP-Benutzername (auch als `DEFAULT_FROM_EMAIL`) |
+| `smtpPassword` | `''` | SMTP-Passwort (secureString) |
 | `location` | `germanywestcentral` | Azure-Region |
 | `virtualMachineSize` | `Standard_B2ms` | VM-Größe (2 vCPU / 8 GB) |
 | `osDiskSizeGB` | `64` | Größe der OS-Disk in GB |
 | `adminUsername` | `os4user` | SSH-Benutzer auf der VM |
 | `adminPassword` | *(Pflicht)* | SSH-Passwort — bitte ein starkes wählen |
-| `customData` | Base64 von `cloud-init.yml` | Bootstrap-Konfiguration der VM (nur anfassen, wer weiß, was er tut) |
 
 ## Nach dem Deployment
 
-Das cloud-init läuft einmal mit Platzhalter-Werten durch (`subdomain.pfadfinden.de`, leeres SMTP-Passwort). So finalisierst du die Instanz:
+Die cloud-init konfiguriert die VM bereits vollständig mit den Werten aus dem Formular — es ist **nichts mehr per SSH nachträglich zu editieren**. Es bleibt nur:
 
-1. **DNS**: Lege einen A-Record für deine Subdomain (z. B. `openslides.example.org`) an, der auf die öffentliche IP der VM zeigt. Warte, bis er propagiert ist.
-2. **Per SSH auf die VM verbinden**: `ssh os4user@<öffentliche-ip>` (Passwort aus dem Deployment-Formular).
-3. **Konfiguration anpassen**: `nano /home/os4user/my-config.yml`
-   - ersetze jedes `subdomain.pfadfinden.de` durch deine Subdomain (`EXTERNAL_ADDRESS` und `SYSTEM_URL`)
-   - trage deine SMTP-Daten ein (`EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`, ...)
-4. **Stack neu generieren und starten**:
-
-   ```sh
-   cd /home/os4user
-   ./openslides setup --config my-config.yml /home/os4user
-   sed -i '/      - 0.0.0.0:443:8000/i\      - 0.0.0.0:80:8001' docker-compose.yml
-   docker compose pull
-   docker compose up -d
-   ```
-
-5. **Initiale Daten anlegen**: `./openslides initial-data -a <deine-subdomain>:443`
-6. Rufe `https://<deine-subdomain>` auf und melde dich mit **admin / admin** an — ändere das Passwort sofort (Benutzermenü → Passwort ändern).
+1. **DNS**: Lege einen A-Record für deine Subdomain (z. B. `openslides.example.org`) an, der auf die öffentliche IP der VM zeigt. Am besten *vor* dem Deployment, damit das Let's-Encrypt-Zertifikat (Auto-HTTPS) direkt ausgestellt werden kann.
+2. Rufe `https://<deine-subdomain>` auf und melde dich mit **admin / admin** an — ändere das Passwort sofort (Benutzermenü → Passwort ändern).
