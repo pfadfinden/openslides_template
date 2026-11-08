@@ -1,0 +1,39 @@
+name: Build ARM template
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'os4machine.bicep'
+      - 'cloud-init.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-template
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-bicep@v2
+
+      - name: Compile bicep to azuredeploy.json
+        run: bicep build os4machine.bicep --stdout > azuredeploy.json
+
+      - name: Commit regenerated template if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add azuredeploy.json
+          if git diff --cached --quiet; then
+            echo "azuredeploy.json is already up to date"
+          else
+            git commit -m "chore: regenerate azuredeploy.json [skip ci]"
+            git push
+          fi
