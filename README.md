@@ -53,4 +53,4 @@ Es gibt zwei Varianten — wähle die passende für deine Azure-Rechte:
 Die cloud-init konfiguriert die VM bereits vollständig mit den Werten aus dem Formular — es ist **nichts mehr per SSH nachträglich zu editieren**. Es bleibt nur:
 
 1. **DNS**: Lege einen A-Record für deine Subdomain (z. B. `openslides.example.org`) an, der auf die öffentliche IP der VM zeigt. Am besten *vor* dem Deployment, damit das Let's-Encrypt-Zertifikat (Auto-HTTPS) direkt ausgestellt werden kann.
-2. Rufe `https://<deine-subdomain>` auf und melde dich mit **admin / admin** an — ändere das Passwort sofort (Benutzermenü → Passwort ändern).
+2. Rufe `https://<deine-subdomain>` auf und melde dich mit **superadmin / superadmin** an (das setzt `openslides initial-data`: Benutzername `superadmin`, Passwort aus dem Docker-Secret `superadmin`, Default `superadmin`) — ändere das Passwort sofort (Benutzermenü → Passwort ändern).
