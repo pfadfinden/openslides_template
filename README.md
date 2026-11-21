@@ -19,8 +19,10 @@ Ein-Klick-Deployment einer neuen [OpenSlides-4](https://openslides.com)-Instanz 
 
 ## Deployment
 
-1. Klicke oben auf **Deploy to Azure** und melde dich im Azure-Portal an.
-2. **Basics**: Subscription und Region wählen (Default: `germanywestcentral`). Die **Ressourcengruppe wird automatisch neu angelegt** — ihren Namen gibst du im Feld `resourceGroupName` an (Default: `openslides-rg`).
+1. Klicke oben auf **Deploy to Azure** und melde dich im Azure-Portal an. Die Ressourcengruppe wird automatisch mit dem Namen aus `resourceGroupName` neu angelegt — dafür brauchst du **Contributor auf der Subscription**.
+
+   Hast du nur Rechte auf eine **bestehende Ressourcengruppe** (z. B. von einem Admin angelegt)? Dann nutze stattdessen: [Deploy into existing resource group](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fpfadfinden%2Fopenslides_template%2Fmain%2Fazuredeploy.rg.json) — damit deployt das Portal in die RG, die du im Formular auswählst (reicht: **Contributor auf die RG**).
+2. **Basics**: Subscription und Region wählen (Default: `germanywestcentral`). Beim Haupt-Button wird die **Ressourcengruppe automatisch neu angelegt** — ihren Namen gibst du im Feld `resourceGroupName` an (Default: `openslides-rg`). Beim Fallback-Button wählst du stattdessen eine **existierende** Ressourcengruppe aus dem Dropdown.
 3. **Einstellungen**: Pflicht sind das **Admin-Passwort** der VM und **`openslidesSubdomain`** (z. B. `openslides.example.org`). Optional trägst du direkt deine **SMTP-Daten** ein (`smtpHost`, `smtpUser`, `smtpPassword`) — dann verschickt OpenSlides E-Mails (Einladungen, Passwort-Reset) sofort. Alles andere ist bereits vorausgefüllt (`Standard_B2ms`, Debian 12, Benutzer `os4user`, Ports 22/80/443).
 4. **Überprüfen + erstellen** und ca. 5–10 Minuten warten. Die **öffentliche IP** der VM steht in den Deployment-Outputs.
 

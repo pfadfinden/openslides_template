@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.49.2.45890",
-      "templateHash": "17474931698713448282"
+      "templateHash": "10962780469221856646"
     }
   },
   "parameters": {
@@ -377,17 +377,23 @@
             "_generator": {
               "name": "bicep",
               "version": "0.49.2.45890",
-              "templateHash": "11995942673387030799"
+              "templateHash": "5947450948469224027"
             }
           },
           "parameters": {
             "networkInterfaceName": {
               "type": "string",
-              "defaultValue": "openslides4-nic"
+              "defaultValue": "openslides4-nic",
+              "metadata": {
+                "description": "Name der Netzwerkkarte (NIC) der VM — nur ändern, wenn nötig"
+              }
             },
             "networkSecurityGroupName": {
               "type": "string",
-              "defaultValue": "openslides4-nsg"
+              "defaultValue": "openslides4-nsg",
+              "metadata": {
+                "description": "Name der Netzwerksicherheitsgruppe (NSG) — nur ändern, wenn nötig"
+              }
             },
             "networkSecurityGroupRules": {
               "type": "array",
@@ -431,21 +437,33 @@
                     "destinationAddressPrefix": "*"
                   }
                 }
-              ]
+              ],
+              "metadata": {
+                "description": "Eingangsregeln der Firewall: offen sind 22 (SSH), 80 und 443 (OpenSlides/HTTPS)"
+              }
             },
             "subnetName": {
               "type": "string",
-              "defaultValue": "default"
+              "defaultValue": "default",
+              "metadata": {
+                "description": "Name des Subnetzes im VNet"
+              }
             },
             "virtualNetworkName": {
               "type": "string",
-              "defaultValue": "openslides4-vnet"
+              "defaultValue": "openslides4-vnet",
+              "metadata": {
+                "description": "Name des virtuellen Netzwerks (VNet)"
+              }
             },
             "addressPrefixes": {
               "type": "array",
               "defaultValue": [
                 "10.0.0.0/16"
-              ]
+              ],
+              "metadata": {
+                "description": "Adressbereich des VNet, z. B. 10.0.0.0/16"
+              }
             },
             "subnets": {
               "type": "array",
@@ -456,89 +474,155 @@
                     "addressPrefix": "10.0.0.0/24"
                   }
                 }
-              ]
+              ],
+              "metadata": {
+                "description": "Subnetze des VNet (Name + Adressbereich)"
+              }
             },
             "publicIpAddressName": {
               "type": "string",
-              "defaultValue": "openslides4-ip"
+              "defaultValue": "openslides4-ip",
+              "metadata": {
+                "description": "Name der öffentlichen IP-Adresse der VM"
+              }
             },
             "publicIpAddressType": {
               "type": "string",
-              "defaultValue": "Static"
+              "defaultValue": "Static",
+              "metadata": {
+                "description": "Allokationsmethode der öffentlichen IP — Static empfohlen, damit die IP stabil bleibt"
+              }
             },
             "publicIpAddressSku": {
               "type": "string",
-              "defaultValue": "Standard"
+              "defaultValue": "Standard",
+              "metadata": {
+                "description": "SKU der öffentlichen IP — Standard ist Pflicht zusammen mit der NSG"
+              }
             },
             "pipDeleteOption": {
               "type": "string",
-              "defaultValue": "Delete"
+              "defaultValue": "Delete",
+              "metadata": {
+                "description": "Was mit der öffentlichen IP passiert, wenn die VM gelöscht wird"
+              }
             },
             "virtualMachineName": {
               "type": "string",
-              "defaultValue": "openslides4"
+              "defaultValue": "openslides4",
+              "metadata": {
+                "description": "Name der VM in Azure"
+              }
             },
             "virtualMachineComputerName": {
               "type": "string",
-              "defaultValue": "openslides4"
+              "defaultValue": "openslides4",
+              "metadata": {
+                "description": "Hostname innerhalb der VM"
+              }
             },
             "osDiskType": {
               "type": "string",
-              "defaultValue": "StandardSSD_LRS"
+              "defaultValue": "StandardSSD_LRS",
+              "metadata": {
+                "description": "Speichertyp der OS-Disk — StandardSSD_LRS ist günstig und für OpenSlides ausreichend"
+              }
             },
             "osDiskSizeGB": {
               "type": "int",
-              "defaultValue": 64
+              "defaultValue": 64,
+              "metadata": {
+                "description": "Größe der OS-Disk in GB — 64 GB empfohlen (Docker-Images + Datenbank)"
+              }
             },
             "osDiskDeleteOption": {
               "type": "string",
-              "defaultValue": "Delete"
+              "defaultValue": "Delete",
+              "metadata": {
+                "description": "Was mit der OS-Disk passiert, wenn die VM gelöscht wird"
+              }
             },
             "virtualMachineSize": {
               "type": "string",
-              "defaultValue": "Standard_B2ms"
+              "defaultValue": "Standard_B2ms",
+              "metadata": {
+                "description": "VM-Größe — Standard_B2ms (2 vCPU / 8 GB, burstable: drosselt bei Dauerlast)"
+              }
             },
             "nicDeleteOption": {
               "type": "string",
-              "defaultValue": "Delete"
+              "defaultValue": "Delete",
+              "metadata": {
+                "description": "Was mit der Netzwerkkarte passiert, wenn die VM gelöscht wird"
+              }
             },
             "adminUsername": {
               "type": "string",
-              "defaultValue": "os4user"
+              "defaultValue": "os4user",
+              "metadata": {
+                "description": "SSH-Benutzername auf der VM"
+              }
             },
             "adminPassword": {
-              "type": "securestring"
+              "type": "securestring",
+              "metadata": {
+                "description": "SSH-Passwort für den VM-Benutzer — bitte ein starkes Passwort wählen"
+              }
             },
             "openslidesSubdomain": {
-              "type": "string"
+              "type": "string",
+              "metadata": {
+                "description": "Deine Subdomain, z. B. openslides.example.org — wird in EXTERNAL_ADDRESS und SYSTEM_URL eingetragen"
+              }
             },
             "smtpHost": {
               "type": "string",
-              "defaultValue": ""
+              "defaultValue": "",
+              "metadata": {
+                "description": "SMTP-Server für ausgehende E-Mails (Einladungen, Passwort-Reset), z. B. smtp.example.org"
+              }
             },
             "smtpUser": {
               "type": "string",
-              "defaultValue": ""
+              "defaultValue": "",
+              "metadata": {
+                "description": "SMTP-Benutzername, wird auch als DEFAULT_FROM_EMAIL verwendet"
+              }
             },
             "smtpPassword": {
               "type": "securestring",
-              "defaultValue": ""
+              "defaultValue": "",
+              "metadata": {
+                "description": "SMTP-Passwort"
+              }
             },
             "alertEmail": {
               "type": "string",
-              "defaultValue": ""
+              "defaultValue": "",
+              "metadata": {
+                "description": "E-Mail-Adresse für Monitoring-Alerts (leer = keine Alerts). Meldet dauerhaft hohe CPU-Last — die B2ms-VM ist burstable und drosselt, sobald die CPU-Credits aufgebraucht sind."
+              }
             },
             "securityType": {
               "type": "string",
-              "defaultValue": "TrustedLaunch"
+              "defaultValue": "TrustedLaunch",
+              "metadata": {
+                "description": "Sicherheitstyp der VM — TrustedLaunch aktiviert Secure Boot + vTPM (empfohlen)"
+              }
             },
             "secureBoot": {
               "type": "bool",
-              "defaultValue": true
+              "defaultValue": true,
+              "metadata": {
+                "description": "Secure Boot aktivieren (nur mit TrustedLaunch)"
+              }
             },
             "vTPM": {
               "type": "bool",
-              "defaultValue": true
+              "defaultValue": true,
+              "metadata": {
+                "description": "virtuelles TPM (vTPM) aktivieren (nur mit TrustedLaunch)"
+              }
             }
           },
           "variables": {

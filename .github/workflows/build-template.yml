@@ -30,17 +30,19 @@ jobs:
           curl -sL --fail -o /tmp/bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
           chmod +x /tmp/bicep
 
-      - name: Compile bicep to azuredeploy.json
-        run: /tmp/bicep build os4machine.bicep --stdout > azuredeploy.json
+      - name: Compile bicep templates
+        run: |
+          /tmp/bicep build os4machine.bicep --stdout > azuredeploy.json
+          /tmp/bicep build vm.bicep --stdout > azuredeploy.rg.json
 
-      - name: Commit regenerated template if changed
+      - name: Commit regenerated templates if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add azuredeploy.json
+          git add azuredeploy.json azuredeploy.rg.json
           if git diff --cached --quiet; then
-            echo "azuredeploy.json is already up to date"
+            echo "templates are already up to date"
           else
-            git commit -m "chore: regenerate azuredeploy.json [skip ci]"
+            git commit -m "chore: regenerate azuredeploy.json/azuredeploy.rg.json [skip ci]"
             git push
           fi

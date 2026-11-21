@@ -8,6 +8,7 @@ on:
       - 'vm.bicep'
       - 'cloud-init.yml'
       - 'azuredeploy.json'
+      - 'azuredeploy.rg.json'
       - '.github/workflows/*.yml'
 
 permissions:
@@ -27,11 +28,17 @@ jobs:
           chmod +x /tmp/bicep
 
       - name: bicep build must succeed
-        run: /tmp/bicep build os4machine.bicep --stdout > /tmp/azuredeploy.json
+        run: |
+          /tmp/bicep build os4machine.bicep --stdout > /tmp/azuredeploy.json
+          /tmp/bicep build vm.bicep --stdout > /tmp/azuredeploy.rg.json
 
-      - name: azuredeploy.json must be in sync with the bicep source
+      - name: compiled templates must be in sync with the bicep source
         run: |
           if ! diff /tmp/azuredeploy.json azuredeploy.json; then
             echo "::error::azuredeploy.json is stale - regenerate it with: bicep build os4machine.bicep --stdout > azuredeploy.json"
+            exit 1
+          fi
+          if ! diff /tmp/azuredeploy.rg.json azuredeploy.rg.json; then
+            echo "::error::azuredeploy.rg.json is stale - regenerate it with: bicep build vm.bicep --stdout > azuredeploy.rg.json"
             exit 1
           fi
