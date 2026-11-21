@@ -69,12 +69,17 @@ param nicDeleteOption string = 'Delete'
 param adminUsername string = 'os4user'
 
 @secure()
+@description('SSH-Passwort für den VM-Benutzer — bitte ein starkes Passwort wählen')
 param adminPassword string
 
+@description('Deine Subdomain, z. B. openslides.example.org — wird in EXTERNAL_ADDRESS und SYSTEM_URL eingetragen')
 param openslidesSubdomain string
+@description('SMTP-Server für ausgehende E-Mails (Einladungen, Passwort-Reset), z. B. smtp.example.org')
 param smtpHost string = ''
+@description('SMTP-Benutzername, wird auch als DEFAULT_FROM_EMAIL verwendet')
 param smtpUser string = ''
 @secure()
+@description('SMTP-Passwort')
 param smtpPassword string = ''
 param securityType string = 'TrustedLaunch'
 param secureBoot bool = true
