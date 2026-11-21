@@ -81,6 +81,8 @@ param smtpUser string = ''
 @secure()
 @description('SMTP-Passwort')
 param smtpPassword string = ''
+@description('E-Mail-Adresse für Monitoring-Alerts (leer = keine Alerts). Meldet dauerhaft hohe CPU-Last — die B2ms-VM ist burstable und drosselt, sobald die CPU-Credits aufgebraucht sind.')
+param alertEmail string = ''
 param securityType string = 'TrustedLaunch'
 param secureBoot bool = true
 param vTPM bool = true
@@ -212,6 +214,56 @@ resource virtualMachine 'Microsoft.Compute/virtualMachines@2022-03-01' = {
         enabled: true
       }
     }
+  }
+}
+
+resource alertActionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = if (alertEmail != '') {
+  name: '${virtualMachineName}-alerts'
+  location: 'global'
+  properties: {
+    groupShortName: 'os4alerts'
+    enabled: true
+    emailReceivers: [
+      {
+        name: 'admin'
+        emailAddress: alertEmail
+        useCommonAlertSchema: true
+      }
+    ]
+  }
+}
+
+resource highCpuAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = if (alertEmail != '') {
+  name: '${virtualMachineName}-high-cpu'
+  location: 'global'
+  properties: {
+    description: 'Dauerhaft hohe CPU-Last: Die B2ms-VM ist burstable und drosselt, sobald die CPU-Credits aufgebraucht sind.'
+    severity: 2
+    enabled: true
+    scopes: [
+      virtualMachine.id
+    ]
+    evaluationFrequency: 'PT5M'
+    windowSize: 'PT15M'
+    criteria: {
+      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
+      allOf: [
+        {
+          criterionType: 'StaticThresholdCriterion'
+          name: 'HighAverageCpu'
+          metricName: 'Percentage CPU'
+          operator: 'GreaterThan'
+          threshold: 80
+          timeAggregation: 'Average'
+          dimensions: []
+        }
+      ]
+    }
+    actions: [
+      {
+        actionGroupId: alertActionGroup.id
+      }
+    ]
   }
 }
 

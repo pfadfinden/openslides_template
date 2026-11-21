@@ -32,6 +32,7 @@ Ein-Klick-Deployment einer neuen [OpenSlides-4](https://openslides.com)-Instanz 
 | `smtpHost` | `''` | SMTP-Server für ausgehende E-Mails |
 | `smtpUser` | `''` | SMTP-Benutzername (auch als `DEFAULT_FROM_EMAIL`) |
 | `smtpPassword` | `''` | SMTP-Passwort (secureString) |
+| `alertEmail` | `''` | E-Mail für Monitoring-Alerts (leer = aus). Alert: CPU dauerhaft > 80 % (B2ms drosselt bei aufgebrauchten Credits) |
 | `location` | `germanywestcentral` | Azure-Region |
 | `virtualMachineSize` | `Standard_B2ms` | VM-Größe (2 vCPU / 8 GB) |
 | `osDiskSizeGB` | `64` | Größe der OS-Disk in GB |

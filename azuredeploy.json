@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.49.2.45890",
-      "templateHash": "6179382165414741811"
+      "templateHash": "2993968958953795418"
     }
   },
   "parameters": {
@@ -171,6 +171,13 @@
         "description": "SMTP-Passwort"
       }
     },
+    "alertEmail": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "E-Mail-Adresse für Monitoring-Alerts (leer = keine Alerts). Meldet dauerhaft hohe CPU-Last — die B2ms-VM ist burstable und drosselt, sobald die CPU-Credits aufgebraucht sind."
+      }
+    },
     "securityType": {
       "type": "string",
       "defaultValue": "TrustedLaunch"
@@ -321,6 +328,64 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName'))]"
+      ]
+    },
+    {
+      "condition": "[not(equals(parameters('alertEmail'), ''))]",
+      "type": "Microsoft.Insights/actionGroups",
+      "apiVersion": "2023-01-01",
+      "name": "[format('{0}-alerts', parameters('virtualMachineName'))]",
+      "location": "global",
+      "properties": {
+        "groupShortName": "os4alerts",
+        "enabled": true,
+        "emailReceivers": [
+          {
+            "name": "admin",
+            "emailAddress": "[parameters('alertEmail')]",
+            "useCommonAlertSchema": true
+          }
+        ]
+      }
+    },
+    {
+      "condition": "[not(equals(parameters('alertEmail'), ''))]",
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[format('{0}-high-cpu', parameters('virtualMachineName'))]",
+      "location": "global",
+      "properties": {
+        "description": "Dauerhaft hohe CPU-Last: Die B2ms-VM ist burstable und drosselt, sobald die CPU-Credits aufgebraucht sind.",
+        "severity": 2,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachineName'))]"
+        ],
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT15M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "criterionType": "StaticThresholdCriterion",
+              "name": "HighAverageCpu",
+              "metricName": "Percentage CPU",
+              "operator": "GreaterThan",
+              "threshold": 80,
+              "timeAggregation": "Average",
+              "dimensions": []
+            }
+          ]
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', format('{0}-alerts', parameters('virtualMachineName')))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', format('{0}-alerts', parameters('virtualMachineName')))]",
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachineName'))]"
       ]
     }
   ],
