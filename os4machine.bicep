@@ -85,7 +85,9 @@ var vnetId = resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks
 var subnetRef = '${vnetId}/subnets/${subnetName}'
 
 var cloudInitYaml = loadTextContent('cloud-init.yml')
+// bicep-disable-next-line prefer-interpolation
 var smtpPasswordPlaceholder = concat('EMAIL_HOST_PASSWORD: ', '''', '''')
+// bicep-disable-next-line prefer-interpolation
 var smtpPasswordLine = format('EMAIL_HOST_PASSWORD: "{0}"', smtpPassword)
 var cloudInitRendered = replace(replace(replace(replace(cloudInitYaml, 'subdomain.pfadfinden.de', openslidesSubdomain), 'smtpHostHier.pfadfinden.de', smtpHost), 'mailAddyHier@pfadfinden.de', smtpUser), smtpPasswordPlaceholder, smtpPasswordLine)
 
