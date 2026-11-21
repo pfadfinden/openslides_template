@@ -1,11 +1,16 @@
 # BdP OpenSlides-4-Deployer
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fpfadfinden%2Fopenslides_template%2Fmain%2Fazuredeploy.json)
-[![Deploy into existing resource group](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fpfadfinden%2Fopenslides_template%2Fmain%2Fazuredeploy.rg.json)
-
 Ein-Klick-Deployment einer neuen [OpenSlides-4](https://openslides.com)-Instanz auf einer dedizierten Azure-VM. Die VM wird vollständig per cloud-init konfiguriert — keine manuelle Installation nötig.
 
-Zwei Buttons: **Deploy to Azure** legt die Ressourcengruppe selbst neu an (braucht Contributor auf der Subscription). **Deploy into existing resource group** deployt in eine bestehende RG, die du im Portal auswählst (reicht Contributor auf die RG). Details siehe [Deployment](#deployment).
+Es gibt zwei Varianten — wähle die passende für deine Azure-Rechte:
+
+**Variante 1: Neue Ressourcengruppe wird automatisch angelegt.** Du brauchst **Contributor auf der Subscription**. Den Namen der Ressourcengruppe gibst du im Formular im Feld `resourceGroupName` an (Default: `openslides-rg`).
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fpfadfinden%2Fopenslides_template%2Fmain%2Fazuredeploy.json)
+
+**Variante 2: Deployment in eine bestehende Ressourcengruppe.** Du brauchst nur **Contributor auf dieser einen RG** — die RG muss bereits existieren (z. B. von einem Admin angelegt) und wird im Portal-Formular aus dem Dropdown ausgewählt.
+
+[![Deploy into existing resource group](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fpfadfinden%2Fopenslides_template%2Fmain%2Fazuredeploy.rg.json)
 
 ## Was du bekommst
 
@@ -22,10 +27,8 @@ Zwei Buttons: **Deploy to Azure** legt die Ressourcengruppe selbst neu an (brauc
 
 ## Deployment
 
-1. Klicke oben auf **Deploy to Azure** und melde dich im Azure-Portal an. Die Ressourcengruppe wird automatisch mit dem Namen aus `resourceGroupName` neu angelegt — dafür brauchst du **Contributor auf der Subscription**.
-
-   Hast du nur Rechte auf eine **bestehende Ressourcengruppe** (z. B. von einem Admin angelegt)? Dann nutze stattdessen: [Deploy into existing resource group](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fpfadfinden%2Fopenslides_template%2Fmain%2Fazuredeploy.rg.json) — damit deployt das Portal in die RG, die du im Formular auswählst (reicht: **Contributor auf die RG**).
-2. **Basics**: Subscription und Region wählen (Default: `germanywestcentral`). Beim Haupt-Button wird die **Ressourcengruppe automatisch neu angelegt** — ihren Namen gibst du im Feld `resourceGroupName` an (Default: `openslides-rg`). Beim Fallback-Button wählst du stattdessen eine **existierende** Ressourcengruppe aus dem Dropdown.
+1. Klicke oben auf den Button der passenden Variante (siehe Erklärungen direkt über den Buttons) und melde dich im Azure-Portal an.
+2. **Basics**: Subscription und Region wählen (Default: `germanywestcentral`). Bei **Variante 1** wird die Ressourcengruppe automatisch neu angelegt — Name im Feld `resourceGroupName` (Default: `openslides-rg`). Bei **Variante 2** wählst du eine **existierende** Ressourcengruppe aus dem Dropdown.
 3. **Einstellungen**: Pflicht sind das **Admin-Passwort** der VM und **`openslidesSubdomain`** (z. B. `openslides.example.org`). Optional trägst du direkt deine **SMTP-Daten** ein (`smtpHost`, `smtpUser`, `smtpPassword`) — dann verschickt OpenSlides E-Mails (Einladungen, Passwort-Reset) sofort. Alles andere ist bereits vorausgefüllt (`Standard_B2ms`, Debian 12, Benutzer `os4user`, Ports 22/80/443).
 4. **Überprüfen + erstellen** und ca. 5–10 Minuten warten. Die **öffentliche IP** der VM steht in den Deployment-Outputs.
 
