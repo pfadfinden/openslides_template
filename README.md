@@ -1,8 +1,11 @@
 # BdP OpenSlides-4-Deployer
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fpfadfinden%2Fopenslides_template%2Fmain%2Fazuredeploy.json)
+[![Deploy into existing resource group](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fpfadfinden%2Fopenslides_template%2Fmain%2Fazuredeploy.rg.json)
 
 Ein-Klick-Deployment einer neuen [OpenSlides-4](https://openslides.com)-Instanz auf einer dedizierten Azure-VM. Die VM wird vollständig per cloud-init konfiguriert — keine manuelle Installation nötig.
+
+Zwei Buttons: **Deploy to Azure** legt die Ressourcengruppe selbst neu an (braucht Contributor auf der Subscription). **Deploy into existing resource group** deployt in eine bestehende RG, die du im Portal auswählst (reicht Contributor auf die RG). Details siehe [Deployment](#deployment).
 
 ## Was du bekommst
 
