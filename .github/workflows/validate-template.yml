@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'os4machine.bicep'
+      - 'vm.bicep'
       - 'cloud-init.yml'
       - 'azuredeploy.json'
       - '.github/workflows/*.yml'

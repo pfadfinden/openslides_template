@@ -1,11 +1,11 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
     "_generator": {
       "name": "bicep",
       "version": "0.49.2.45890",
-      "templateHash": "7165857789471840485"
+      "templateHash": "17474931698713448282"
     }
   },
   "parameters": {
@@ -14,6 +14,13 @@
       "defaultValue": "germanywestcentral",
       "metadata": {
         "description": "Azure-Region, in der alles angelegt wird (z. B. germanywestcentral)"
+      }
+    },
+    "resourceGroupName": {
+      "type": "string",
+      "defaultValue": "openslides-rg",
+      "metadata": {
+        "description": "Name der Ressourcengruppe — wird neu angelegt, falls sie noch nicht existiert (z. B. openslides-rg)"
       }
     },
     "networkInterfaceName": {
@@ -260,212 +267,507 @@
       }
     }
   },
-  "variables": {
-    "nsgId": "[resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]",
-    "vnetId": "[resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-    "subnetRef": "[format('{0}/subnets/{1}', variables('vnetId'), parameters('subnetName'))]",
-    "cloudInitYaml": "#cloud-config\ntimezone: Europe/Berlin\npackage_update: true\npackage_upgrade: true\npackages:\n  - ca-certificates\n  - curl\n  - gnupg\nwrite_files:\n  - path: /home/os4user/my-config.yml\n    permissions: '0644'\n    content: |\n      ---\n      host: 0.0.0.0\n      port: 443\n      enableAutoHTTPS: true\n      enableLocalHTTPS: false\n      services:\n        proxy:\n          environment:\n            EXTERNAL_ADDRESS: subdomain.pfadfinden.de\n        backendAction:\n          environment:\n            EMAIL_HOST: smtpHostHier.pfadfinden.de\n            EMAIL_PORT: 587\n            EMAIL_HOST_USER: \"mailAddyHier@pfadfinden.de\"\n            EMAIL_HOST_PASSWORD: ''\n            EMAIL_CONNECTION_SECURITY: \"STARTTLS\"  # This can also be \"NONE\" or \"STARTTLS\".\n            EMAIL_TIMEOUT: 5  # Timeout in seconds for blocking operations like the connection attempt.\n            EMAIL_ACCEPT_SELF_SIGNED_CERTIFICATE: \"false\"  # Or \"true\" of course.\n            DEFAULT_FROM_EMAIL: \"mailAddyHier@pfadfinden.de\"\n      defaultEnvironment:\n        SYSTEM_URL: subdomain.pfadfinden.de\n    owner: os4user:os4user\nruncmd:\n  - install -m 0755 -d /etc/apt/keyrings\n  - curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg\n  - chmod a+r /etc/apt/keyrings/docker.gpg\n  - echo \"deb [arch=\"$(dpkg --print-architecture)\" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \"$(. /etc/os-release && echo \"$VERSION_CODENAME\")\" stable\" | tee /etc/apt/sources.list.d/docker.list > /dev/null\n  - apt update\n  - apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin\n  - wget -P /home/os4user https://github.com/OpenSlides/openslides-manage-service/releases/download/latest/openslides\n  - chmod +x /home/os4user/openslides\n  - /home/os4user/openslides setup --config /home/os4user/my-config.yml /home/os4user\n  - sed -i '/      - 0.0.0.0:443:8000/i\\      - 0.0.0.0:80:8001' /home/os4user/docker-compose.yml\n  - docker compose -f /home/os4user/docker-compose.yml pull\n  - docker compose -f /home/os4user/docker-compose.yml up -d\n  - sleep 60\n  - cd /home/os4user\n  - /home/os4user/openslides initial-data -a subdomain.pfadfinden.de:443\n  - chown -R os4user:os4user /home/os4user\n",
-    "smtpPasswordPlaceholder": "[concat('EMAIL_HOST_PASSWORD: ', ''', ''')]",
-    "smtpPasswordLine": "[format('EMAIL_HOST_PASSWORD: \"{0}\"', parameters('smtpPassword'))]",
-    "cloudInitRendered": "[replace(replace(replace(replace(variables('cloudInitYaml'), 'subdomain.pfadfinden.de', parameters('openslidesSubdomain')), 'smtpHostHier.pfadfinden.de', parameters('smtpHost')), 'mailAddyHier@pfadfinden.de', parameters('smtpUser')), variables('smtpPasswordPlaceholder'), variables('smtpPasswordLine'))]"
-  },
   "resources": [
     {
-      "type": "Microsoft.Network/networkInterfaces",
-      "apiVersion": "2021-08-01",
-      "name": "[parameters('networkInterfaceName')]",
-      "location": "[parameters('location')]",
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2024-03-01",
+      "name": "[parameters('resourceGroupName')]",
+      "location": "[parameters('location')]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "openslides4-deployment",
+      "resourceGroup": "[parameters('resourceGroupName')]",
       "properties": {
-        "ipConfigurations": [
-          {
-            "name": "ipconfig1",
-            "properties": {
-              "subnet": {
-                "id": "[variables('subnetRef')]"
-              },
-              "privateIPAllocationMethod": "Dynamic",
-              "publicIPAddress": {
-                "id": "[resourceId(resourceGroup().name, 'Microsoft.Network/publicIpAddresses', parameters('publicIpAddressName'))]",
-                "properties": {
-                  "deleteOption": "[parameters('pipDeleteOption')]"
-                }
-              }
-            }
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "networkInterfaceName": {
+            "value": "[parameters('networkInterfaceName')]"
+          },
+          "networkSecurityGroupName": {
+            "value": "[parameters('networkSecurityGroupName')]"
+          },
+          "networkSecurityGroupRules": {
+            "value": "[parameters('networkSecurityGroupRules')]"
+          },
+          "subnetName": {
+            "value": "[parameters('subnetName')]"
+          },
+          "virtualNetworkName": {
+            "value": "[parameters('virtualNetworkName')]"
+          },
+          "addressPrefixes": {
+            "value": "[parameters('addressPrefixes')]"
+          },
+          "subnets": {
+            "value": "[parameters('subnets')]"
+          },
+          "publicIpAddressName": {
+            "value": "[parameters('publicIpAddressName')]"
+          },
+          "publicIpAddressType": {
+            "value": "[parameters('publicIpAddressType')]"
+          },
+          "publicIpAddressSku": {
+            "value": "[parameters('publicIpAddressSku')]"
+          },
+          "pipDeleteOption": {
+            "value": "[parameters('pipDeleteOption')]"
+          },
+          "virtualMachineName": {
+            "value": "[parameters('virtualMachineName')]"
+          },
+          "virtualMachineComputerName": {
+            "value": "[parameters('virtualMachineComputerName')]"
+          },
+          "osDiskType": {
+            "value": "[parameters('osDiskType')]"
+          },
+          "osDiskSizeGB": {
+            "value": "[parameters('osDiskSizeGB')]"
+          },
+          "osDiskDeleteOption": {
+            "value": "[parameters('osDiskDeleteOption')]"
+          },
+          "virtualMachineSize": {
+            "value": "[parameters('virtualMachineSize')]"
+          },
+          "nicDeleteOption": {
+            "value": "[parameters('nicDeleteOption')]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "openslidesSubdomain": {
+            "value": "[parameters('openslidesSubdomain')]"
+          },
+          "smtpHost": {
+            "value": "[parameters('smtpHost')]"
+          },
+          "smtpUser": {
+            "value": "[parameters('smtpUser')]"
+          },
+          "smtpPassword": {
+            "value": "[parameters('smtpPassword')]"
+          },
+          "alertEmail": {
+            "value": "[parameters('alertEmail')]"
+          },
+          "securityType": {
+            "value": "[parameters('securityType')]"
+          },
+          "secureBoot": {
+            "value": "[parameters('secureBoot')]"
+          },
+          "vTPM": {
+            "value": "[parameters('vTPM')]"
           }
-        ],
-        "networkSecurityGroup": {
-          "id": "[variables('nsgId')]"
-        }
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]",
-        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpAddressName'))]",
-        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
-      ]
-    },
-    {
-      "type": "Microsoft.Network/networkSecurityGroups",
-      "apiVersion": "2019-02-01",
-      "name": "[parameters('networkSecurityGroupName')]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "securityRules": "[parameters('networkSecurityGroupRules')]"
-      }
-    },
-    {
-      "type": "Microsoft.Network/virtualNetworks",
-      "apiVersion": "2024-07-01",
-      "name": "[parameters('virtualNetworkName')]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "addressSpace": {
-          "addressPrefixes": "[parameters('addressPrefixes')]"
         },
-        "subnets": "[parameters('subnets')]"
-      }
-    },
-    {
-      "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "2020-08-01",
-      "name": "[parameters('publicIpAddressName')]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "publicIPAllocationMethod": "[parameters('publicIpAddressType')]"
-      },
-      "sku": {
-        "name": "[parameters('publicIpAddressSku')]"
-      }
-    },
-    {
-      "type": "Microsoft.Compute/virtualMachines",
-      "apiVersion": "2022-03-01",
-      "name": "[parameters('virtualMachineName')]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "hardwareProfile": {
-          "vmSize": "[parameters('virtualMachineSize')]"
-        },
-        "storageProfile": {
-          "osDisk": {
-            "createOption": "fromImage",
-            "diskSizeGB": "[parameters('osDiskSizeGB')]",
-            "managedDisk": {
-              "storageAccountType": "[parameters('osDiskType')]"
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.49.2.45890",
+              "templateHash": "11995942673387030799"
+            }
+          },
+          "parameters": {
+            "networkInterfaceName": {
+              "type": "string",
+              "defaultValue": "openslides4-nic"
             },
-            "deleteOption": "[parameters('osDiskDeleteOption')]"
+            "networkSecurityGroupName": {
+              "type": "string",
+              "defaultValue": "openslides4-nsg"
+            },
+            "networkSecurityGroupRules": {
+              "type": "array",
+              "defaultValue": [
+                {
+                  "name": "allow-ssh",
+                  "properties": {
+                    "priority": 1000,
+                    "direction": "Inbound",
+                    "access": "Allow",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "22",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*"
+                  }
+                },
+                {
+                  "name": "allow-http",
+                  "properties": {
+                    "priority": 1010,
+                    "direction": "Inbound",
+                    "access": "Allow",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "80",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*"
+                  }
+                },
+                {
+                  "name": "allow-https",
+                  "properties": {
+                    "priority": 1020,
+                    "direction": "Inbound",
+                    "access": "Allow",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "443",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*"
+                  }
+                }
+              ]
+            },
+            "subnetName": {
+              "type": "string",
+              "defaultValue": "default"
+            },
+            "virtualNetworkName": {
+              "type": "string",
+              "defaultValue": "openslides4-vnet"
+            },
+            "addressPrefixes": {
+              "type": "array",
+              "defaultValue": [
+                "10.0.0.0/16"
+              ]
+            },
+            "subnets": {
+              "type": "array",
+              "defaultValue": [
+                {
+                  "name": "[parameters('subnetName')]",
+                  "properties": {
+                    "addressPrefix": "10.0.0.0/24"
+                  }
+                }
+              ]
+            },
+            "publicIpAddressName": {
+              "type": "string",
+              "defaultValue": "openslides4-ip"
+            },
+            "publicIpAddressType": {
+              "type": "string",
+              "defaultValue": "Static"
+            },
+            "publicIpAddressSku": {
+              "type": "string",
+              "defaultValue": "Standard"
+            },
+            "pipDeleteOption": {
+              "type": "string",
+              "defaultValue": "Delete"
+            },
+            "virtualMachineName": {
+              "type": "string",
+              "defaultValue": "openslides4"
+            },
+            "virtualMachineComputerName": {
+              "type": "string",
+              "defaultValue": "openslides4"
+            },
+            "osDiskType": {
+              "type": "string",
+              "defaultValue": "StandardSSD_LRS"
+            },
+            "osDiskSizeGB": {
+              "type": "int",
+              "defaultValue": 64
+            },
+            "osDiskDeleteOption": {
+              "type": "string",
+              "defaultValue": "Delete"
+            },
+            "virtualMachineSize": {
+              "type": "string",
+              "defaultValue": "Standard_B2ms"
+            },
+            "nicDeleteOption": {
+              "type": "string",
+              "defaultValue": "Delete"
+            },
+            "adminUsername": {
+              "type": "string",
+              "defaultValue": "os4user"
+            },
+            "adminPassword": {
+              "type": "securestring"
+            },
+            "openslidesSubdomain": {
+              "type": "string"
+            },
+            "smtpHost": {
+              "type": "string",
+              "defaultValue": ""
+            },
+            "smtpUser": {
+              "type": "string",
+              "defaultValue": ""
+            },
+            "smtpPassword": {
+              "type": "securestring",
+              "defaultValue": ""
+            },
+            "alertEmail": {
+              "type": "string",
+              "defaultValue": ""
+            },
+            "securityType": {
+              "type": "string",
+              "defaultValue": "TrustedLaunch"
+            },
+            "secureBoot": {
+              "type": "bool",
+              "defaultValue": true
+            },
+            "vTPM": {
+              "type": "bool",
+              "defaultValue": true
+            }
           },
-          "imageReference": {
-            "publisher": "debian",
-            "offer": "debian-12",
-            "sku": "12-gen2",
-            "version": "latest"
-          }
-        },
-        "networkProfile": {
-          "networkInterfaces": [
+          "variables": {
+            "nsgId": "[resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]",
+            "vnetId": "[resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+            "subnetRef": "[format('{0}/subnets/{1}', variables('vnetId'), parameters('subnetName'))]",
+            "cloudInitYaml": "#cloud-config\ntimezone: Europe/Berlin\npackage_update: true\npackage_upgrade: true\npackages:\n  - ca-certificates\n  - curl\n  - gnupg\nwrite_files:\n  - path: /home/os4user/my-config.yml\n    permissions: '0644'\n    content: |\n      ---\n      host: 0.0.0.0\n      port: 443\n      enableAutoHTTPS: true\n      enableLocalHTTPS: false\n      services:\n        proxy:\n          environment:\n            EXTERNAL_ADDRESS: subdomain.pfadfinden.de\n        backendAction:\n          environment:\n            EMAIL_HOST: smtpHostHier.pfadfinden.de\n            EMAIL_PORT: 587\n            EMAIL_HOST_USER: \"mailAddyHier@pfadfinden.de\"\n            EMAIL_HOST_PASSWORD: ''\n            EMAIL_CONNECTION_SECURITY: \"STARTTLS\"  # This can also be \"NONE\" or \"STARTTLS\".\n            EMAIL_TIMEOUT: 5  # Timeout in seconds for blocking operations like the connection attempt.\n            EMAIL_ACCEPT_SELF_SIGNED_CERTIFICATE: \"false\"  # Or \"true\" of course.\n            DEFAULT_FROM_EMAIL: \"mailAddyHier@pfadfinden.de\"\n      defaultEnvironment:\n        SYSTEM_URL: subdomain.pfadfinden.de\n    owner: os4user:os4user\nruncmd:\n  - install -m 0755 -d /etc/apt/keyrings\n  - curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg\n  - chmod a+r /etc/apt/keyrings/docker.gpg\n  - echo \"deb [arch=\"$(dpkg --print-architecture)\" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \"$(. /etc/os-release && echo \"$VERSION_CODENAME\")\" stable\" | tee /etc/apt/sources.list.d/docker.list > /dev/null\n  - apt update\n  - apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin\n  - wget -P /home/os4user https://github.com/OpenSlides/openslides-manage-service/releases/download/latest/openslides\n  - chmod +x /home/os4user/openslides\n  - /home/os4user/openslides setup --config /home/os4user/my-config.yml /home/os4user\n  - sed -i '/      - 0.0.0.0:443:8000/i\\      - 0.0.0.0:80:8001' /home/os4user/docker-compose.yml\n  - docker compose -f /home/os4user/docker-compose.yml pull\n  - docker compose -f /home/os4user/docker-compose.yml up -d\n  - sleep 60\n  - cd /home/os4user\n  - /home/os4user/openslides initial-data -a subdomain.pfadfinden.de:443\n  - chown -R os4user:os4user /home/os4user\n",
+            "smtpPasswordPlaceholder": "[concat('EMAIL_HOST_PASSWORD: ', ''', ''')]",
+            "smtpPasswordLine": "[format('EMAIL_HOST_PASSWORD: \"{0}\"', parameters('smtpPassword'))]",
+            "cloudInitRendered": "[replace(replace(replace(replace(variables('cloudInitYaml'), 'subdomain.pfadfinden.de', parameters('openslidesSubdomain')), 'smtpHostHier.pfadfinden.de', parameters('smtpHost')), 'mailAddyHier@pfadfinden.de', parameters('smtpUser')), variables('smtpPasswordPlaceholder'), variables('smtpPasswordLine'))]"
+          },
+          "resources": [
             {
-              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName'))]",
+              "type": "Microsoft.Network/networkInterfaces",
+              "apiVersion": "2021-08-01",
+              "name": "[parameters('networkInterfaceName')]",
+              "location": "[resourceGroup().location]",
               "properties": {
-                "deleteOption": "[parameters('nicDeleteOption')]"
+                "ipConfigurations": [
+                  {
+                    "name": "ipconfig1",
+                    "properties": {
+                      "subnet": {
+                        "id": "[variables('subnetRef')]"
+                      },
+                      "privateIPAllocationMethod": "Dynamic",
+                      "publicIPAddress": {
+                        "id": "[resourceId(resourceGroup().name, 'Microsoft.Network/publicIpAddresses', parameters('publicIpAddressName'))]",
+                        "properties": {
+                          "deleteOption": "[parameters('pipDeleteOption')]"
+                        }
+                      }
+                    }
+                  }
+                ],
+                "networkSecurityGroup": {
+                  "id": "[variables('nsgId')]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpAddressName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2019-02-01",
+              "name": "[parameters('networkSecurityGroupName')]",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "securityRules": "[parameters('networkSecurityGroupRules')]"
               }
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2024-07-01",
+              "name": "[parameters('virtualNetworkName')]",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": "[parameters('addressPrefixes')]"
+                },
+                "subnets": "[parameters('subnets')]"
+              }
+            },
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2020-08-01",
+              "name": "[parameters('publicIpAddressName')]",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "publicIPAllocationMethod": "[parameters('publicIpAddressType')]"
+              },
+              "sku": {
+                "name": "[parameters('publicIpAddressSku')]"
+              }
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines",
+              "apiVersion": "2022-03-01",
+              "name": "[parameters('virtualMachineName')]",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "hardwareProfile": {
+                  "vmSize": "[parameters('virtualMachineSize')]"
+                },
+                "storageProfile": {
+                  "osDisk": {
+                    "createOption": "fromImage",
+                    "diskSizeGB": "[parameters('osDiskSizeGB')]",
+                    "managedDisk": {
+                      "storageAccountType": "[parameters('osDiskType')]"
+                    },
+                    "deleteOption": "[parameters('osDiskDeleteOption')]"
+                  },
+                  "imageReference": {
+                    "publisher": "debian",
+                    "offer": "debian-12",
+                    "sku": "12-gen2",
+                    "version": "latest"
+                  }
+                },
+                "networkProfile": {
+                  "networkInterfaces": [
+                    {
+                      "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName'))]",
+                      "properties": {
+                        "deleteOption": "[parameters('nicDeleteOption')]"
+                      }
+                    }
+                  ]
+                },
+                "osProfile": {
+                  "computerName": "[parameters('virtualMachineComputerName')]",
+                  "adminUsername": "[parameters('adminUsername')]",
+                  "adminPassword": "[parameters('adminPassword')]",
+                  "linuxConfiguration": {
+                    "patchSettings": {
+                      "patchMode": "ImageDefault"
+                    }
+                  },
+                  "customData": "[base64(variables('cloudInitRendered'))]"
+                },
+                "securityProfile": {
+                  "securityType": "[parameters('securityType')]",
+                  "uefiSettings": {
+                    "secureBootEnabled": "[parameters('secureBoot')]",
+                    "vTpmEnabled": "[parameters('vTPM')]"
+                  }
+                },
+                "diagnosticsProfile": {
+                  "bootDiagnostics": {
+                    "enabled": true
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName'))]"
+              ]
+            },
+            {
+              "condition": "[not(equals(parameters('alertEmail'), ''))]",
+              "type": "Microsoft.Insights/actionGroups",
+              "apiVersion": "2023-01-01",
+              "name": "[format('{0}-alerts', parameters('virtualMachineName'))]",
+              "location": "global",
+              "properties": {
+                "groupShortName": "os4alerts",
+                "enabled": true,
+                "emailReceivers": [
+                  {
+                    "name": "admin",
+                    "emailAddress": "[parameters('alertEmail')]",
+                    "useCommonAlertSchema": true
+                  }
+                ]
+              }
+            },
+            {
+              "condition": "[not(equals(parameters('alertEmail'), ''))]",
+              "type": "Microsoft.Insights/metricAlerts",
+              "apiVersion": "2018-03-01",
+              "name": "[format('{0}-high-cpu', parameters('virtualMachineName'))]",
+              "location": "global",
+              "properties": {
+                "description": "Dauerhaft hohe CPU-Last: Die B2ms-VM ist burstable und drosselt, sobald die CPU-Credits aufgebraucht sind.",
+                "severity": 2,
+                "enabled": true,
+                "scopes": [
+                  "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachineName'))]"
+                ],
+                "evaluationFrequency": "PT5M",
+                "windowSize": "PT15M",
+                "criteria": {
+                  "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+                  "allOf": [
+                    {
+                      "criterionType": "StaticThresholdCriterion",
+                      "name": "HighAverageCpu",
+                      "metricName": "Percentage CPU",
+                      "operator": "GreaterThan",
+                      "threshold": 80,
+                      "timeAggregation": "Average",
+                      "dimensions": []
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', format('{0}-alerts', parameters('virtualMachineName')))]"
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/actionGroups', format('{0}-alerts', parameters('virtualMachineName')))]",
+                "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachineName'))]"
+              ]
             }
-          ]
-        },
-        "osProfile": {
-          "computerName": "[parameters('virtualMachineComputerName')]",
-          "adminUsername": "[parameters('adminUsername')]",
-          "adminPassword": "[parameters('adminPassword')]",
-          "linuxConfiguration": {
-            "patchSettings": {
-              "patchMode": "ImageDefault"
+          ],
+          "outputs": {
+            "adminUsername": {
+              "type": "string",
+              "value": "[parameters('adminUsername')]"
+            },
+            "publicIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpAddressName')), '2020-08-01').ipAddress]"
             }
-          },
-          "customData": "[base64(variables('cloudInitRendered'))]"
-        },
-        "securityProfile": {
-          "securityType": "[parameters('securityType')]",
-          "uefiSettings": {
-            "secureBootEnabled": "[parameters('secureBoot')]",
-            "vTpmEnabled": "[parameters('vTPM')]"
-          }
-        },
-        "diagnosticsProfile": {
-          "bootDiagnostics": {
-            "enabled": true
           }
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName'))]"
-      ]
-    },
-    {
-      "condition": "[not(equals(parameters('alertEmail'), ''))]",
-      "type": "Microsoft.Insights/actionGroups",
-      "apiVersion": "2023-01-01",
-      "name": "[format('{0}-alerts', parameters('virtualMachineName'))]",
-      "location": "global",
-      "properties": {
-        "groupShortName": "os4alerts",
-        "enabled": true,
-        "emailReceivers": [
-          {
-            "name": "admin",
-            "emailAddress": "[parameters('alertEmail')]",
-            "useCommonAlertSchema": true
-          }
-        ]
-      }
-    },
-    {
-      "condition": "[not(equals(parameters('alertEmail'), ''))]",
-      "type": "Microsoft.Insights/metricAlerts",
-      "apiVersion": "2018-03-01",
-      "name": "[format('{0}-high-cpu', parameters('virtualMachineName'))]",
-      "location": "global",
-      "properties": {
-        "description": "Dauerhaft hohe CPU-Last: Die B2ms-VM ist burstable und drosselt, sobald die CPU-Credits aufgebraucht sind.",
-        "severity": 2,
-        "enabled": true,
-        "scopes": [
-          "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachineName'))]"
-        ],
-        "evaluationFrequency": "PT5M",
-        "windowSize": "PT15M",
-        "criteria": {
-          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
-          "allOf": [
-            {
-              "criterionType": "StaticThresholdCriterion",
-              "name": "HighAverageCpu",
-              "metricName": "Percentage CPU",
-              "operator": "GreaterThan",
-              "threshold": 80,
-              "timeAggregation": "Average",
-              "dimensions": []
-            }
-          ]
-        },
-        "actions": [
-          {
-            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', format('{0}-alerts', parameters('virtualMachineName')))]"
-          }
-        ]
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Insights/actionGroups', format('{0}-alerts', parameters('virtualMachineName')))]",
-        "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachineName'))]"
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('resourceGroupName'))]"
       ]
     }
   ],
   "outputs": {
+    "resourceGroupName": {
+      "type": "string",
+      "value": "[parameters('resourceGroupName')]"
+    },
     "adminUsername": {
       "type": "string",
-      "value": "[parameters('adminUsername')]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'openslides4-deployment'), '2025-04-01').outputs.adminUsername.value]"
     },
     "publicIpAddress": {
       "type": "string",
-      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpAddressName')), '2020-08-01').ipAddress]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'openslides4-deployment'), '2025-04-01').outputs.publicIpAddress.value]"
     }
   }
 }

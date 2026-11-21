@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'os4machine.bicep'
+      - 'vm.bicep'
       - 'cloud-init.yml'
       - '.github/workflows/build-template.yml'
   workflow_dispatch:

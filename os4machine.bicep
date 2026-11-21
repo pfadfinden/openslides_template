@@ -1,5 +1,9 @@
+targetScope = 'subscription'
+
 @description('Azure-Region, in der alles angelegt wird (z. B. germanywestcentral)')
 param location string = 'germanywestcentral'
+@description('Name der Ressourcengruppe — wird neu angelegt, falls sie noch nicht existiert (z. B. openslides-rg)')
+param resourceGroupName string = 'openslides-rg'
 @description('Name der Netzwerkkarte (NIC) der VM — nur ändern, wenn nötig')
 param networkInterfaceName string = 'openslides4-nic'
 @description('Name der Netzwerksicherheitsgruppe (NSG) — nur ändern, wenn nötig')
@@ -110,185 +114,46 @@ param secureBoot bool = true
 @description('virtuelles TPM (vTPM) aktivieren (nur mit TrustedLaunch)')
 param vTPM bool = true
 
-var nsgId = resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', networkSecurityGroupName)
-var vnetId = resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', virtualNetworkName)
-var subnetRef = '${vnetId}/subnets/${subnetName}'
-
-var cloudInitYaml = loadTextContent('cloud-init.yml')
-var smtpPasswordPlaceholder = concat('EMAIL_HOST_PASSWORD: ', '''', '''')
-var smtpPasswordLine = 'EMAIL_HOST_PASSWORD: "${smtpPassword}"'
-var cloudInitRendered = replace(replace(replace(replace(cloudInitYaml, 'subdomain.pfadfinden.de', openslidesSubdomain), 'smtpHostHier.pfadfinden.de', smtpHost), 'mailAddyHier@pfadfinden.de', smtpUser), smtpPasswordPlaceholder, smtpPasswordLine)
-
-resource networkInterface 'Microsoft.Network/networkInterfaces@2021-08-01' = {
-  name: networkInterfaceName
+resource resourceGroup 'Microsoft.Resources/resourceGroups@2024-03-01' = {
+  name: resourceGroupName
   location: location
-  properties: {
-    ipConfigurations: [
-      {
-        name: 'ipconfig1'
-        properties: {
-          subnet: {
-            id: subnetRef
-          }
-          privateIPAllocationMethod: 'Dynamic'
-          publicIPAddress: {
-            id: resourceId(resourceGroup().name, 'Microsoft.Network/publicIpAddresses', publicIpAddressName)
-            properties: {
-              deleteOption: pipDeleteOption
-            }
-          }
-        }
-      }
-    ]
-    networkSecurityGroup: {
-      id: nsgId
-    }
-  }
-  dependsOn: [
-    networkSecurityGroup
-    virtualNetwork
-    publicIpAddress
-  ]
 }
 
-resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2019-02-01' = {
-  name: networkSecurityGroupName
-  location: location
-  properties: {
-    securityRules: networkSecurityGroupRules
-  }
-}
-
-resource virtualNetwork 'Microsoft.Network/virtualNetworks@2024-07-01' = {
-  name: virtualNetworkName
-  location: location
-  properties: {
-    addressSpace: {
-      addressPrefixes: addressPrefixes
-    }
+module vm 'vm.bicep' = {
+  name: 'openslides4-deployment'
+  scope: resourceGroup
+  params: {
+    networkInterfaceName: networkInterfaceName
+    networkSecurityGroupName: networkSecurityGroupName
+    networkSecurityGroupRules: networkSecurityGroupRules
+    subnetName: subnetName
+    virtualNetworkName: virtualNetworkName
+    addressPrefixes: addressPrefixes
     subnets: subnets
+    publicIpAddressName: publicIpAddressName
+    publicIpAddressType: publicIpAddressType
+    publicIpAddressSku: publicIpAddressSku
+    pipDeleteOption: pipDeleteOption
+    virtualMachineName: virtualMachineName
+    virtualMachineComputerName: virtualMachineComputerName
+    osDiskType: osDiskType
+    osDiskSizeGB: osDiskSizeGB
+    osDiskDeleteOption: osDiskDeleteOption
+    virtualMachineSize: virtualMachineSize
+    nicDeleteOption: nicDeleteOption
+    adminUsername: adminUsername
+    adminPassword: adminPassword
+    openslidesSubdomain: openslidesSubdomain
+    smtpHost: smtpHost
+    smtpUser: smtpUser
+    smtpPassword: smtpPassword
+    alertEmail: alertEmail
+    securityType: securityType
+    secureBoot: secureBoot
+    vTPM: vTPM
   }
 }
 
-resource publicIpAddress 'Microsoft.Network/publicIpAddresses@2020-08-01' = {
-  name: publicIpAddressName
-  location: location
-  properties: {
-    publicIPAllocationMethod: publicIpAddressType
-  }
-  sku: {
-    name: publicIpAddressSku
-  }
-}
-
-resource virtualMachine 'Microsoft.Compute/virtualMachines@2022-03-01' = {
-  name: virtualMachineName
-  location: location
-  properties: {
-    hardwareProfile: {
-      vmSize: virtualMachineSize
-    }
-    storageProfile: {
-      osDisk: {
-        createOption: 'fromImage'
-        diskSizeGB: osDiskSizeGB
-        managedDisk: {
-          storageAccountType: osDiskType
-        }
-        deleteOption: osDiskDeleteOption
-      }
-      imageReference: {
-        publisher: 'debian'
-        offer: 'debian-12'
-        sku: '12-gen2'
-        version: 'latest'
-      }
-    }
-    networkProfile: {
-      networkInterfaces: [
-        {
-          id: networkInterface.id
-          properties: {
-            deleteOption: nicDeleteOption
-          }
-        }
-      ]
-    }
-    osProfile: {
-      computerName: virtualMachineComputerName
-      adminUsername: adminUsername
-      adminPassword: adminPassword
-      linuxConfiguration: {
-        patchSettings: {
-          patchMode: 'ImageDefault'
-        }
-      }
-      customData: base64(cloudInitRendered)
-    }
-    securityProfile: {
-      securityType: securityType
-      uefiSettings: {
-        secureBootEnabled: secureBoot
-        vTpmEnabled: vTPM
-      }
-    }
-    diagnosticsProfile: {
-      bootDiagnostics: {
-        enabled: true
-      }
-    }
-  }
-}
-
-resource alertActionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = if (alertEmail != '') {
-  name: '${virtualMachineName}-alerts'
-  location: 'global'
-  properties: {
-    groupShortName: 'os4alerts'
-    enabled: true
-    emailReceivers: [
-      {
-        name: 'admin'
-        emailAddress: alertEmail
-        useCommonAlertSchema: true
-      }
-    ]
-  }
-}
-
-resource highCpuAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = if (alertEmail != '') {
-  name: '${virtualMachineName}-high-cpu'
-  location: 'global'
-  properties: {
-    description: 'Dauerhaft hohe CPU-Last: Die B2ms-VM ist burstable und drosselt, sobald die CPU-Credits aufgebraucht sind.'
-    severity: 2
-    enabled: true
-    scopes: [
-      virtualMachine.id
-    ]
-    evaluationFrequency: 'PT5M'
-    windowSize: 'PT15M'
-    criteria: {
-      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
-      allOf: [
-        {
-          criterionType: 'StaticThresholdCriterion'
-          name: 'HighAverageCpu'
-          metricName: 'Percentage CPU'
-          operator: 'GreaterThan'
-          threshold: 80
-          timeAggregation: 'Average'
-          dimensions: []
-        }
-      ]
-    }
-    actions: [
-      {
-        actionGroupId: alertActionGroup.id
-      }
-    ]
-  }
-}
-
-output adminUsername string = adminUsername
-output publicIpAddress string = publicIpAddress.properties.ipAddress
+output resourceGroupName string = resourceGroupName
+output adminUsername string = vm.outputs.adminUsername
+output publicIpAddress string = vm.outputs.publicIpAddress

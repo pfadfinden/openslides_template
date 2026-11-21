@@ -20,7 +20,7 @@ Ein-Klick-Deployment einer neuen [OpenSlides-4](https://openslides.com)-Instanz 
 ## Deployment
 
 1. Klicke oben auf **Deploy to Azure** und melde dich im Azure-Portal an.
-2. **Basics**: Subscription wählen, neue Ressourcengruppe anlegen (z. B. `openslides-rg`) und Region wählen (Default: `germanywestcentral`).
+2. **Basics**: Subscription und Region wählen (Default: `germanywestcentral`). Die **Ressourcengruppe wird automatisch neu angelegt** — ihren Namen gibst du im Feld `resourceGroupName` an (Default: `openslides-rg`).
 3. **Einstellungen**: Pflicht sind das **Admin-Passwort** der VM und **`openslidesSubdomain`** (z. B. `openslides.example.org`). Optional trägst du direkt deine **SMTP-Daten** ein (`smtpHost`, `smtpUser`, `smtpPassword`) — dann verschickt OpenSlides E-Mails (Einladungen, Passwort-Reset) sofort. Alles andere ist bereits vorausgefüllt (`Standard_B2ms`, Debian 12, Benutzer `os4user`, Ports 22/80/443).
 4. **Überprüfen + erstellen** und ca. 5–10 Minuten warten. Die **öffentliche IP** der VM steht in den Deployment-Outputs.
 
@@ -28,6 +28,7 @@ Ein-Klick-Deployment einer neuen [OpenSlides-4](https://openslides.com)-Instanz 
 
 | Parameter | Default | Beschreibung |
 | --- | --- | --- |
+| `resourceGroupName` | `openslides-rg` | Name der Ressourcengruppe — wird neu angelegt, falls sie noch nicht existiert |
 | `openslidesSubdomain` | *(Pflicht)* | Deine Subdomain, z. B. `openslides.example.org` — wird in die cloud-init eingetragen (`EXTERNAL_ADDRESS`, `SYSTEM_URL`) |
 | `smtpHost` | `''` | SMTP-Server für ausgehende E-Mails |
 | `smtpUser` | `''` | SMTP-Benutzername (auch als `DEFAULT_FROM_EMAIL`) |
