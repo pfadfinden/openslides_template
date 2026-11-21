@@ -6,6 +6,7 @@ on:
     paths:
       - 'os4machine.bicep'
       - 'cloud-init.yml'
+      - '.github/workflows/build-template.yml'
   workflow_dispatch:
 
 permissions:
@@ -21,10 +22,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: azure/setup-bicep@v2
+      # azure/setup-bicep is blocked by the org's action allowlist, so install
+      # the bicep binary directly instead of using the third-party action
+      - name: Install bicep CLI
+        run: |
+          curl -sL --fail -o /tmp/bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
+          chmod +x /tmp/bicep
 
       - name: Compile bicep to azuredeploy.json
-        run: bicep build os4machine.bicep --stdout > azuredeploy.json
+        run: /tmp/bicep build os4machine.bicep --stdout > azuredeploy.json
 
       - name: Commit regenerated template if changed
         run: |
