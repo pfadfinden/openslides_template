@@ -1,0 +1,36 @@
+name: Validate template
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'os4machine.bicep'
+      - 'cloud-init.yml'
+      - 'azuredeploy.json'
+      - '.github/workflows/*.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # azure/setup-bicep is blocked by the org's action allowlist, so install
+      # the bicep binary directly instead of using the third-party action
+      - name: Install bicep CLI
+        run: |
+          curl -sL --fail -o /tmp/bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
+          chmod +x /tmp/bicep
+
+      - name: bicep build must succeed
+        run: /tmp/bicep build os4machine.bicep --stdout > /tmp/azuredeploy.json
+
+      - name: azuredeploy.json must be in sync with the bicep source
+        run: |
+          if ! diff /tmp/azuredeploy.json azuredeploy.json; then
+            echo "::error::azuredeploy.json is stale - regenerate it with: bicep build os4machine.bicep --stdout > azuredeploy.json"
+            exit 1
+          fi

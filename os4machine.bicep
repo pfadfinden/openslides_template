@@ -90,10 +90,8 @@ var vnetId = resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks
 var subnetRef = '${vnetId}/subnets/${subnetName}'
 
 var cloudInitYaml = loadTextContent('cloud-init.yml')
-// bicep-disable-next-line prefer-interpolation
 var smtpPasswordPlaceholder = concat('EMAIL_HOST_PASSWORD: ', '''', '''')
-// bicep-disable-next-line prefer-interpolation
-var smtpPasswordLine = format('EMAIL_HOST_PASSWORD: "{0}"', smtpPassword)
+var smtpPasswordLine = 'EMAIL_HOST_PASSWORD: "${smtpPassword}"'
 var cloudInitRendered = replace(replace(replace(replace(cloudInitYaml, 'subdomain.pfadfinden.de', openslidesSubdomain), 'smtpHostHier.pfadfinden.de', smtpHost), 'mailAddyHier@pfadfinden.de', smtpUser), smtpPasswordPlaceholder, smtpPasswordLine)
 
 resource networkInterface 'Microsoft.Network/networkInterfaces@2021-08-01' = {
@@ -136,7 +134,7 @@ resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2019-02-0
   }
 }
 
-resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-01-01' = {
+resource virtualNetwork 'Microsoft.Network/virtualNetworks@2024-07-01' = {
   name: virtualNetworkName
   location: location
   properties: {

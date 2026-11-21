@@ -1,0 +1,9 @@
+{
+  "analyzers": {
+    "core": {
+      "rules": {
+        "prefer-interpolation": { "level": "off" }
+      }
+    }
+  }
+}
